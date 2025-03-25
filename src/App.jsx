@@ -5,7 +5,6 @@ import { useState } from "react"
 function App() {
 
 const [gridSize, setGridSize] = useState(3);
-// const [value, setValue] = useState(0);
 
   return (
     <>

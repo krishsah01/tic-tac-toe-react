@@ -8,7 +8,7 @@ export function Board({ gridSize }) {
     const [currentPlayer, setCurrentPlayer] = useState("X");
     const [winner, setWinner] = useState(null);
     const [gameOver, setGameOver] = useState(false);
-    const [isTie, setIsTie] = useState(false);  // New state for tie
+    const [isTie, setIsTie] = useState(false); 
 
     useEffect(() => {
         setHistory([Array(gridSize ** 2).fill(null)]);
