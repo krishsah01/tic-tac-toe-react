@@ -1,54 +1,89 @@
-import { useState, useEffect } from "react"
-import { Square } from "./Square"
-import { checkWinningLines } from "./tictactoe"
-export function Board({gridSize}){
-    const [squares, setSquares] = useState(Array(gridSize ** 2).fill(null))
-    const [currentPlayer, setCurrentPlayer] = useState('X')
-    const [winner, setWinner] = useState('')
-    const [gameOver,setGameOver] = useState(false)
+import { useState, useEffect } from "react";
+import { Square } from "./Square";
+import { checkWinningLines } from "./tictactoe";
+
+export function Board({ gridSize }) {
+    const [history, setHistory] = useState([Array(gridSize ** 2).fill(null)]);
+    const [currentMove, setCurrentMove] = useState(0);
+    const [currentPlayer, setCurrentPlayer] = useState("X");
+    const [winner, setWinner] = useState(null);
+    const [gameOver, setGameOver] = useState(false);
+    const [isTie, setIsTie] = useState(false);  // New state for tie
 
     useEffect(() => {
-        setSquares(Array(gridSize ** 2).fill(null))
+        setHistory([Array(gridSize ** 2).fill(null)]);
+        setCurrentMove(0);
         setCurrentPlayer("X");
         setGameOver(false);
         setWinner(null);
-    }, [gridSize])
-    
-    function onSquareClick(index){
+        setIsTie(false);
+    }, [gridSize]);
+
+    const squares = history[currentMove];
+
+    function onSquareClick(index) {
         if (squares[index] || gameOver) return;
 
-        const newSquare = squares.slice()
-        newSquare[index] = currentPlayer;
-        setSquares(newSquare)
+        const newSquares = squares.slice();
+        newSquares[index] = currentPlayer;
+        const newHistory = history.slice(0, currentMove + 1).concat([newSquares]);
 
-        const gameWinner = checkWinningLines(gridSize, squares)
-        if(gameWinner){
-            setGameOver(true)
-            setWinner(gameWinner)
+        setHistory(newHistory);
+        setCurrentMove(newHistory.length - 1);
+
+        const gameWinner = checkWinningLines(gridSize, newSquares);
+        if (gameWinner) {
+            setWinner(gameWinner);
+            setGameOver(true);
+        } else if (newSquares.every(square => square !== null)) {  // Check for tie
+            setIsTie(true);
+            setGameOver(true);
+        } else {
+            setCurrentPlayer((prev) => (prev === "X" ? "O" : "X"));
         }
-        else setCurrentPlayer(currentPlayer === 'X'? 'O' : 'X')
-        
     }
 
-    function handleGameRestart(){
-        setSquares(Array(gridSize ** 2).fill(null));
-        setCurrentPlayer('X');
+    function jumpTo(move) {
+        setCurrentMove(move);
+        setGameOver(false);
+        setWinner(null);
+        setIsTie(false);
+        setCurrentPlayer(move % 2 === 0 ? "X" : "O");
+    }
+
+    function handleGameRestart() {
+        setHistory([Array(gridSize ** 2).fill(null)]);
+        setCurrentMove(0);
+        setCurrentPlayer("X");
+        setGameOver(false);
+        setWinner(null);
+        setIsTie(false);
     }
 
     return (
-    <>
-        {gameOver &&  <h2>Game Winner is {winner}</h2>}
-        <div style={{
-        display: `grid`,
-        gridTemplateColumns: `repeat(${gridSize}, 34px)`
-    }}>
-        {
-        squares.map((square, index) => (
-                <Square value= {square} onSquareClick={() => onSquareClick(index)}/>
-        ))
-        }
-    </div>
-        <button onClick={handleGameRestart}>Reset</button>
-    </>
-    )
+        <>
+            {winner && <h2>🎉 Winner: {winner} 🎉</h2>}
+            {isTie && !winner && <h2>🤝 It's a tie! 🤝</h2>}
+            {!winner && !isTie && <h2>Current Player: {currentPlayer}</h2>}
+
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${gridSize}, 34px)`, gap: "4px" }}>
+                {squares.map((square, index) => (
+                    <Square key={index} value={square} onSquareClick={() => onSquareClick(index)} />
+                ))}
+            </div>
+
+            <button onClick={handleGameRestart}>Reset</button>
+
+            <h3>Game History</h3>
+            <ol>
+                {history.map((_, move) => (
+                    <li key={move}>
+                        <button onClick={() => jumpTo(move)}>
+                            {move === 0 ? "Go to start" : `Go to move #${move}`}
+                        </button>
+                    </li>
+                ))}
+            </ol>
+        </>
+    );
 }
